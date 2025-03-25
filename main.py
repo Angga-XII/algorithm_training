@@ -1,46 +1,26 @@
 '''
-Mr. Lee has to travel various offices abroad to assist branches of each place. But he has a problem.
-The airfare would be real high as all offices he has to visit are in foreign countries. He wants to visit every
-location only one time and return home with the lowest expense. Help this company-caring man calculate the lowest expense.
+There is a source (S) and destination (D) and a spacecraft has to go from S to D. There are N number of wormholes in between which has following properties:
 
+Each wormhole has an entry and an exit. Each wormhole is bi-directional i.e. one can enter and exit from any of the ends. The time to cross the wormhole is given and the space craft may or may not use the wormhole to reach D. The cost to travel outside wormhole between two points (x1, y1) and (x2, y2) is given by a formula |x1 - x2| + |y1 - y2|
 
-Input format
-Several test cases can be included in the inputs. T, the number of cases is given in the first row of the inputs.
-After that, the test cases as many as T (T ≤ 30) are given in a row. N, the number of offices to visit is given on
-the first row per each test case. At this moment, No. 1 office is regarded as his company (Departure point).
-(1 ≤ N ≤ 12) Airfares are given to move cities in which branches are located from the second row to N number rows.
-i.e. jth number of ith row is the airfare to move from ith city to jth city. If it is impossible to move between
-two cities, it is given as zero.
+where, (x1, y1) and (x2, y2) are the co-ordinates of two points. The co-ordinates of S and D are given and we have to find the minimum cost to reach D from S. The main problem here is to minimum cost to reach spaceship from source to destination co-ordinate using any number of warm-hole. It is ok if you wont use any warmhole.
 
-Output format
-Output the minimum airfare used to depart from his company, visit all offices, and then return his company on the
-first row per each test case.
+Note: It’s not mandatory to consider all the wormholes
+First line contains t, number of test cases
 
-Example of Input
+There are N number of warmholes each warmhole has 5 values. First 2 values are starting co-ordinate of warmhole and after that value no. 3 and 4 represents ending co-ordinate of warmhole and last 5th value is represents cost to pass through this warmhole.
 
+Line 1 contains value of N. Line 2 Conatins Source and Destination coordinate. Next N lines contain the warmhole information.
+
+1
 3
-5
-0 14 4 10 20
-14 0 7 8 7
-4 5 0 7 16
-11 7 9 0 2
-18 7 17 4 0
-5
-9 9 2 9 5
-6 3 5 1 5
-1 8 3 3 3
-6 0 9 6 8
-6 6 9 4 8
-3
-0 2 24
-3 0 2
-0 4 0
+0 0 100 100
+1 2 120 120 16
+2 5 120 100 21
+6 8 150 180 16
 
-Example of Output
-
-30
-18
-CUSTOM - 31 <- 4
+sample output
+48
 */
 '''
 
@@ -51,25 +31,55 @@ from itertools import permutations
 import time
 
 
+'''
+STEP FOR IMPLEMENTING DP
+1. define dp bitmask[mask][N] array, with mask = visited city in bit form, N number of city
+2. define the first step bitmask[1][0] as visited with value 0
+3. loop for every mask
+4. loop for every city checking for valid value
+5. loop for every city that is unvisited
+5. update mask and bitmask[mask][n] value
+6. check minimal value on bitmask[final_mask]
+'''
+def pathFinding(airfares, T):
+    # implement BitMask DP
+    INF = float('inf')
+    bitmask = [[INF] * T for _ in range(1 << T)]
+    bitmask[1][0] = 0  # Start from office 0 with only office 0 visited
+    # print(dp)
+    for mask in range(1<<T):
+
+        for i in range(T):
+            if bitmask[mask][i] == INF:
+                continue
+            for j in range(T):
+                if ((mask & (1 << j)) == 0 and airfares[i][j] != 0):
+                    new_mask = mask | (1 << j)
+                    bitmask[new_mask][j] = min(bitmask[new_mask][j], bitmask[mask][i] +  airfares[i][j])
+    res = INF
+    for id in range(T):
+        final = bitmask[-1][id] + airfares[id][0]
+        res = final if(final < res) else res
+    # min_distance += calcDistance(home, best_path[-1])
+    return res
+
+
 if __name__ == '__main__':
     N = int(input())
     t0 = time.time()
-    for i in range(N):
+    for n in range(N):
         T = int(input())
         airfares = []
-
         for i in range(T):
-           airfares.append(list(map(int, str(input()).split())))
+            _temp = list(map(int, str(input()).split()))
+            for j in range(len(_temp)):
+                _temp[j] = float('inf') if (_temp[j] == 0 and i != j) else _temp[j]
+            airfares.append(_temp)
 
-        # Extract coordinates
-        print(airfares)
 
-        # res = pathFinding(office, home, pickup_points)
-        print(f"#{i}", end=" ")
-        # print(res)
-        # x = coords [::2]
-        # y = coords[1::2]
-        # plot(x,y)
+        res = pathFinding(airfares, T)
+        print(f"#{n+1}", end=" ")
+        print(res)
 
     t1 = time.time()
     print("process time: " + str(t1-t0))
