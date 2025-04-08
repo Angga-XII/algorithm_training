@@ -128,7 +128,7 @@ def pathFinding(airfares, T):
     return res
 
 
-# def pathFinding(airfares, city):
+# def pathFinding(wormholes, city):
 #     min_fare = float('inf')
 #     best_path = None
 #     print(len(list(permutations(range(city)[1:]))))
@@ -138,9 +138,9 @@ def pathFinding(airfares, T):
 #         path = [0] + list(perm) + [0]
 #         total_fares = 0
 #         for i in range(len(path) - 1):
-#             # print(airfares[path[i]][path[i + 1 % len(path) - 1]])
-#             total_fares += airfares[path[i]][path[i + 1 % (len(path) - 1)]]
-#         # total_fares = sum(airfares[path[i]][path[i+1 % len(path)-1]] for i in range(len(path) - 1))
+#             # print(wormholes[path[i]][path[i + 1 % len(path) - 1]])
+#             total_fares += wormholes[path[i]][path[i + 1 % (len(path) - 1)]]
+#         # total_fares = sum(wormholes[path[i]][path[i+1 % len(path)-1]] for i in range(len(path) - 1))
 #
 #         if total_fares < min_fare:
 #             print(total_fares)
