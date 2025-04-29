@@ -1,6 +1,3 @@
-#!/bin/python3
-
-
 ''' the probelem
 Byteland has n cities and m flight connections. Your task is to design a round trip that begins in a city, goes through
 one or more other cities, and finally returns to the starting city. Every intermediate city on the route has to be distinct.
@@ -35,9 +32,6 @@ Output:
 2 1 3 2
 
 '''
-
-
-from itertools import permutations
 
 #time is not needed for the answer, but the goal is to have the program process everything on less than 10 seconds
 import time
