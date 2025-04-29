@@ -1,45 +1,71 @@
-# Function to find BFS of Graph from given source s
-def bfs(adj):
-    # get number of vertices
-    V = len(adj)
+import heapq
 
-    # create an array to store the traversal
-    res = []
-    s = 0
-    # Create a queue for BFS
-    from collections import deque
-    q = deque()
+def manhattan_distance(x1, y1, x2, y2):
+    return abs(x1 - x2) + abs(y1 - y2)
 
-    # Initially mark all the vertices as not visited
-    visited = [False] * V
+def solve():
+    t = int(input())
+    for _ in range(t):
+        n = int(input())
+        sx, sy, dx, dy = map(int, input().split())
 
-    # Mark source node as visited and enqueue it
-    visited[s] = True
-    q.append(s)
+        # Wormholes: List of (entry_x, entry_y, exit_x, exit_y, cost)
+        wormholes = []
+        for _ in range(n):
+            wormholes.append(tuple(map(int, input().split())))
 
-    # Iterate over the queue
-    while q:
+        # Build nodes list: source, destination, and all wormhole endpoints
+        nodes = [(sx, sy), (dx, dy)]
+        for w in wormholes:
+            ex, ey, ex2, ey2, cost = w
+            nodes.append((ex, ey))
+            nodes.append((ex2, ey2))
 
-        # Dequeue a vertex from queue and store it
-        curr = q.popleft()
-        res.append(curr)
+        # Total nodes: 2 + 2*N
+        node_count = len(nodes)
 
-        # Get all adjacent vertices of the dequeued
-        # vertex curr If an adjacent has not been
-        # visited, mark it visited and enqueue it
-        for x in adj[curr]:
-            if not visited[x]:
-                visited[x] = True
-                q.append(x)
+        # Build adjacency list: graph[i] = list of (neighbor_index, cost)
+        graph = [[] for _ in range(node_count)]
 
-    return res
+        # Add normal movement (Manhattan distance) edges between all pairs
+        for i in range(node_count):
+            for j in range(node_count):
+                if i != j:
+                    cost = manhattan_distance(nodes[i][0], nodes[i][1], nodes[j][0], nodes[j][1])
+                    graph[i].append((j, cost))
 
+        # Add wormhole edges (shortcut cost)
+        for idx, w in enumerate(wormholes):
+            ex, ey, ex2, ey2, cost = w
+            # Wormhole ends are at nodes 2 + idx*2 and 2 + idx*2 + 1
+            node1 = 2 + idx * 2
+            node2 = node1 + 1
+            # Add bi-directional wormhole with fixed cost
+            graph[node1].append((node2, cost))
+            graph[node2].append((node1, cost))
 
+        # Now run Dijkstra's algorithm from source node (index 0)
+        dist = [float('inf')] * node_count
+        dist[0] = 0
+        heap = [(0, 0)]  # (cost_so_far, node_index)
+
+        while heap:
+            cost_so_far, u = heapq.heappop(heap)
+
+            if cost_so_far > dist[u]:
+                continue  # already found a better path
+
+            for v, edge_cost in graph[u]:
+                if dist[v] > dist[u] + edge_cost:
+                    dist[v] = dist[u] + edge_cost
+                    heapq.heappush(heap, (dist[v], v))
+
+        # Output minimum cost to reach destination (index 1)
+        print(dist[1])
+
+import time
 if __name__ == "__main__":
-
-    # create the adjacency list
-    # [ [2, 3, 1], [0], [0, 4], [0], [2] ]
-    adj = [[1, 2], [0, 2, 3], [0, 4], [1, 4], [2, 3]]
-    ans = bfs(adj)
-    for i in ans:
-        print(i, end=" ")
+    t0 = time.time()
+    solve()
+    t1 = time.time()
+    print("process time: " + str(t1 - t0))
