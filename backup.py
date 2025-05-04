@@ -1,71 +1,101 @@
-import heapq
+from functools import lru_cache
 
-def manhattan_distance(x1, y1, x2, y2):
-    return abs(x1 - x2) + abs(y1 - y2)
+def solve(grid, start_col):
+    """
+    Solve for maximum score and path on the scrolling grid with one bomb using recursion with memoization.
 
-def solve():
-    t = int(input())
-    for _ in range(t):
-        n = int(input())
-        sx, sy, dx, dy = map(int, input().split())
+    grid: list of lists of ints (0,1,2) for rows 0..n-1 (bottommost row is grid[-1], i.e., first encountered)
+    start_col: int, starting column index
+    Returns: (max_score: int, path: list of actions)
+    Actions: 'left', 'stay', 'right', 'bomb'
+    """
+    rows = len(grid)
+    cols = len(grid[0])
 
-        # Wormholes: List of (entry_x, entry_y, exit_x, exit_y, cost)
-        wormholes = []
-        for _ in range(n):
-            wormholes.append(tuple(map(int, input().split())))
+    @lru_cache(None)
+    def dfs(row, col, bomb_used, bomb_effect):
+        # Base: reached above top
+        if row < 0:
+            return 0, []
 
-        # Build nodes list: source, destination, and all wormhole endpoints
-        nodes = [(sx, sy), (dx, dy)]
-        for w in wormholes:
-            ex, ey, ex2, ey2, cost = w
-            nodes.append((ex, ey))
-            nodes.append((ex2, ey2))
+        best_score = -float('inf')
+        best_path = []
 
-        # Total nodes: 2 + 2*N
-        node_count = len(nodes)
+        # Option 1: use bomb (if not used yet)
+        if not bomb_used:
+            # Bomb sets effect for this turn
+            cur_effect = 5
+            # Landing at same column
+            cell = grid[row][col]
+            # Check safety
+            if cell != 2 or cur_effect > 0:
+                # Score gained
+                gain = 1 if cell == 1 else 0
+                # Decrease effect for next step
+                next_effect = cur_effect - 1
+                score, path = dfs(row - 1, col, True, next_effect)
+                total = gain + score
+                if total > best_score:
+                    best_score = total
+                    best_path = ['bomb'] + path
 
-        # Build adjacency list: graph[i] = list of (neighbor_index, cost)
-        graph = [[] for _ in range(node_count)]
+        # Option 2: normal moves
+        for move, action in [(-1, 'left'), (0, 'stay'), (1, 'right')]:
+            new_col = col + move
+            if 0 <= new_col < cols:
+                cur_effect = bomb_effect
+                cell = grid[row][new_col]
+                # If encounter enemy without effect, skip
+                if cell == 2 and cur_effect == 0:
+                    continue
+                # Gain
+                gain = 1 if cell == 1 else 0
+                # Next effect
+                next_effect = max(cur_effect - 1, 0)
+                score, path = dfs(row - 1, new_col, bomb_used, next_effect)
+                total = gain + score
+                if total > best_score:
+                    best_score = total
+                    best_path = [action] + path
 
-        # Add normal movement (Manhattan distance) edges between all pairs
-        for i in range(node_count):
-            for j in range(node_count):
-                if i != j:
-                    cost = manhattan_distance(nodes[i][0], nodes[i][1], nodes[j][0], nodes[j][1])
-                    graph[i].append((j, cost))
+        return best_score, best_path
 
-        # Add wormhole edges (shortcut cost)
-        for idx, w in enumerate(wormholes):
-            ex, ey, ex2, ey2, cost = w
-            # Wormhole ends are at nodes 2 + idx*2 and 2 + idx*2 + 1
-            node1 = 2 + idx * 2
-            node2 = node1 + 1
-            # Add bi-directional wormhole with fixed cost
-            graph[node1].append((node2, cost))
-            graph[node2].append((node1, cost))
-
-        # Now run Dijkstra's algorithm from source node (index 0)
-        dist = [float('inf')] * node_count
-        dist[0] = 0
-        heap = [(0, 0)]  # (cost_so_far, node_index)
-
-        while heap:
-            cost_so_far, u = heapq.heappop(heap)
-
-            if cost_so_far > dist[u]:
-                continue  # already found a better path
-
-            for v, edge_cost in graph[u]:
-                if dist[v] > dist[u] + edge_cost:
-                    dist[v] = dist[u] + edge_cost
-                    heapq.heappush(heap, (dist[v], v))
-
-        # Output minimum cost to reach destination (index 1)
-        print(dist[1])
+    # Start recursion from the bottommost row (index rows-1)
+    max_score, path = dfs(rows - 1, start_col, False, 0)
+    return max_score, path
 
 import time
-if __name__ == "__main__":
+def main():
+    # Read grid input row by row
+    m = int(input("Enter number of rows (including start row): "))
     t0 = time.time()
-    solve()
+    grid = []
+    start_col = None
+    for i in range(m):
+        tokens = input(f"Row {i}: ").split()
+        row_vals = []
+        for j, tok in enumerate(tokens):
+            if tok.upper() == 'S':
+                start_col = j
+                row_vals.append(0)
+            else:
+                row_vals.append(int(tok))
+        grid.append(row_vals)
+
+    if start_col is None:
+        print("Error: Start position 'S' not found in input.")
+        return
+
+    # Remove the start row; process only the rows above start
+    grid_above = grid[:-1]
+    score, path = solve(grid_above, start_col)
+
+    print(f"Maximum score: {score}")
     t1 = time.time()
-    print("process time: " + str(t1 - t0))
+    print("process time: " + str(t1-t0))
+    # print("Moves:")
+    # for step, action in enumerate(path, 1):
+    #     print(f"Turn {step}: {action}")
+
+if __name__ == '__main__':
+    main()
